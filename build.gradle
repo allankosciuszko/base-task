@@ -1,0 +1,122 @@
+ext {
+    ext {
+        groovyVersion = '2.4.1'
+        gebVersion = '0.13.1'
+        seleniumVersion = '3.0.1'
+        chromeDriverVersion = '2.10'
+        baseCRMVersion = "1.4.5"
+
+        testTasksConfigs = [
+                firefox                  : [gebEnv: "firefox", maxParallelForks: 1, forkEvery: 1],
+              
+        ]
+        suites = [
+
+               dev: [
+                        includes: [
+                           "specs/leads/StatusUpdateSpec*"
+                        ],
+                        excludes: [],
+                        baseUrl : "http://dagens.sla.se/"
+                ]
+
+        ]
+
+        seleniumAddress = {
+            def property = "selenium.address"
+            if (System.properties.find { it.key == property } != null) {
+                System.properties.find { it.key == property }.value
+            } else {
+                "localhost"
+            }
+        }
+        suiteName = {
+            def property = "suite"
+            if (System.properties.find { it.key == property } != null) {
+                System.properties.find { it.key == property }.value
+            } else {
+                throw new IllegalArgumentException("no suite property specified")
+            }
+        }
+        suite = {
+            if (suites.find() { it.key == suiteName() }) {
+                suites.get(suiteName())
+            } else {
+                throw new IllegalArgumentException("there is no such suite")
+            }
+
+        }
+    }
+}
+apply plugin: "groovy"
+apply from: "gradle/idea.gradle"
+apply from: "gradle/ci.gradle"
+apply from: "gradle/osSpecificDownloads.gradle"
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven {
+        url  "https://dl.bintray.com/basecrm/maven"
+    }
+
+}
+
+dependencies {
+    compile 'joda-time:joda-time:2.8'
+    compile "org.gebish:geb-spock:$gebVersion"
+
+    compile("org.spockframework:spock-core:1.0-groovy-2.4") {
+        exclude group: "org.codehaus.groovy"
+    }
+    compile "org.codehaus.groovy:groovy-all:$groovyVersion"
+    compile "org.gebish:geb-junit4:$gebVersion"
+
+    compile "org.seleniumhq.selenium:selenium-chrome-driver:$seleniumVersion"
+    compile "org.seleniumhq.selenium:selenium-firefox-driver:$seleniumVersion"
+
+    compile "org.uiautomation:ios-driver:0.6.5"
+    compile "org.seleniumhq.selenium:selenium-support:2.26.0"
+    compile "io.appium:java-client:4.0.0"
+    compile "commons-httpclient:commons-httpclient:3.1"
+    compile "com.restfb:restfb:1.34.1"
+    compile "com.typesafe:config:1.3.1"
+    compile "com.getbase:basecrm-java:$baseCRMVersion"
+    compile group: 'org.jodd', name: 'jodd-mail', version: '3.5'
+    compile group: 'org.jodd', name: 'jodd-lagarto', version: '3.5'
+
+
+}
+
+testTasksConfigs.each { name, config ->
+
+    task "${name}Test"(type: Test) {
+        maxParallelForks = config.get("maxParallelForks")
+        systemProperty "geb.env", config.get("gebEnv")
+        systemProperty "geb.build.reportsDir", reporting.file("${name}/geb")
+        outputs.upToDateWhen { false }
+        doFirst() {
+            def suiteConfig = suite()
+            def suiteName = suiteName()
+            systemProperty "selenium.address", seleniumAddress()
+            systemProperty "geb.build.baseUrl", suiteConfig.get("baseUrl")
+            suiteConfig.includes.each {
+                include it
+            }
+            suiteConfig.excludes.each {
+                exclude it
+            }
+            forkEvery = config.get("forkEvery")
+            reports {
+                html.destination = reporting.file("${name}/${suiteName}")
+                junitXml.destination = file("$buildDir/test-results/${name}/${suiteName}")
+            }
+        }
+    }
+}
+
+test {
+    dependsOn firefoxTest
+    enabled = false
+    outputs.upToDateWhen { false }
+}

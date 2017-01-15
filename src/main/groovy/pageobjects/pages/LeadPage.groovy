@@ -1,5 +1,6 @@
 package pageobjects.pages
 
+import geb.Browser
 import pageobjects.modules.lead.StatusMenu
 
 
@@ -10,7 +11,11 @@ class LeadPage extends BaseLoggedPage {
     }
     static content = {
         statusMenu { module StatusMenu }
-        leadTitle { $(".object-subtitle", 0) }
+        leadTitle {     $(".object-subtitle", 0) }
+        getLeadId {-> Browser.drive() {
+            def match = getUrl() =~ /\d+/
+            match[0]
+        }}
     }
 
 }

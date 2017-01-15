@@ -5,6 +5,7 @@ import com.getbase.Configuration
 import com.getbase.models.Lead
 import com.getbase.services.LeadsService
 import configs.SpecConfig
+import pageobjects.modules.settings.leads.StatusItem
 import pageobjects.pages.DashboardPage
 import pageobjects.pages.Homepage
 import pageobjects.pages.LeadPage
@@ -12,6 +13,8 @@ import pageobjects.pages.LeadsPage
 import pageobjects.pages.LoginPage
 import geb.spock.GebReportingSpec
 import pageobjects.pages.NewLeadPage
+import pageobjects.pages.settngs.LeadsSettingsPage
+import pageobjects.pages.settngs.SettingsPage
 import spock.lang.Shared
 import spock.lang.Stepwise
 
@@ -38,6 +41,9 @@ class StatusUpdateSpec extends GebReportingSpec implements SpecConfig {
                 .each { lead -> apiClient.leads().delete(lead.id) }
     }
 
+   @Shared newLeadID
+
+    @Shared newLeadURL
 
     def "User log in to account"() {
         when:
@@ -70,25 +76,46 @@ class StatusUpdateSpec extends GebReportingSpec implements SpecConfig {
         leadTitle << "test lead"
         email << "testbase@gmail.com"
         saveButton.click()
-        then:
+
+        then: at LeadPage
+
+    }
+
+    def "the status of new created lead is set to default status"() {
+        given:
+        newLeadURL =  currentUrl
+        when:
         at LeadPage
-        leadTitle.text().contains("test lead")
-        statusMenu.status.text() == defaultStateName
-
-
-    }
-
-    def "the status of new created lead is set to New"() {
+        then: leadTitle.text().contains("test lead")
+        and: statusMenu.status.text() == defaultStateName
 
     }
 
-    def "user can change the status name"() {
+    def "user can change the status name in settings"() {
+        when: at LeadPage
+        and: userAvatar.click()
+        then: topRightDropdown.displayed
+
+        when: topRightDropdown.item("Settings").click()
+        then: at SettingsPage
+
+        when:
+        settingsMenu.item("Leads").click()
+        then:
+        at LeadsSettingsPage
+        tabs.tab("Lead Statuses").click()
+        def defaultStatus = statusList[0] as StatusItem
+        defaultStatus.editButton.click()
+        defaultStatus.form.name.firstElement().clear()
+        defaultStatus.form.name << "StatusUpdated"
+        defaultStatus.form.saveButton.click()
 
     }
 
-    def "the changed name should be be reflected on the lead"() {
-
+    def "the changed name should be reflected on the lead"() {
+        when: go newLeadURL
+        then: at LeadPage
+        statusMenu.status.text() == "StatusUpdated"
     }
-
 
 }

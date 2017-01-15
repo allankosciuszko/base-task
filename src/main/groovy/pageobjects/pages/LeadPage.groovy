@@ -12,10 +12,7 @@ class LeadPage extends BaseLoggedPage {
     static content = {
         statusMenu { module StatusMenu }
         leadTitle {     $(".object-subtitle", 0) }
-        getLeadId {-> Browser.drive() {
-            def match = getUrl() =~ /\d+/
-            match[0]
-        }}
+        statusName {statusMenu.status.text()}
     }
 
 }

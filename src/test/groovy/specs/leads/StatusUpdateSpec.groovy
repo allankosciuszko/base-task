@@ -41,9 +41,9 @@ class StatusUpdateSpec extends GebReportingSpec implements SpecConfig {
                 .each { lead -> apiClient.leads().delete(lead.id) }
     }
 
-   @Shared newLeadID
-
     @Shared newLeadURL
+    @Shared newStatusName = "status_${UUID.randomUUID().toString().subSequence(0,10).replaceAll("-", "")}"
+
 
     def "User log in to account"() {
         when:
@@ -105,17 +105,14 @@ class StatusUpdateSpec extends GebReportingSpec implements SpecConfig {
         at LeadsSettingsPage
         tabs.tab("Lead Statuses").click()
         def defaultStatus = statusList[0] as StatusItem
-        defaultStatus.editButton.click()
-        defaultStatus.form.name.firstElement().clear()
-        defaultStatus.form.name << "StatusUpdated"
-        defaultStatus.form.saveButton.click()
+        defaultStatus.updateName(newStatusName)
 
     }
 
     def "the changed name should be reflected on the lead"() {
         when: go newLeadURL
         then: at LeadPage
-        statusMenu.status.text() == "StatusUpdated"
+        statusMenu.status.text() == newStatusName
     }
 
 }

@@ -99,14 +99,11 @@ class StatusUpdateSpec extends GebReportingSpec implements SpecConfig {
         when: topRightDropdown.item("Settings").click()
         then: at SettingsPage
 
-        when:
-        settingsMenu.item("Leads").click()
-        then:
-        at LeadsSettingsPage
+        when: settingsMenu.item("Leads").click()
+        then: at LeadsSettingsPage
         tabs.tab("Lead Statuses").click()
         def defaultStatus = statusList[0] as StatusItem
-        defaultStatus.updateName(newStatusName)
-
+        then: defaultStatus.updateName(newStatusName)
     }
 
     def "the changed name should be reflected on the lead"() {
